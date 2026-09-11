@@ -37,17 +37,19 @@ The specification is [plan.md](plan.md) plus [references/planextention.md](refer
 Claude Code, as a plugin:
 
 ```bash
-claude plugin marketplace add MountaZer/Skil
+claude plugin marketplace add packtryer-design/Skil
 claude plugin install prompt-architect@prompt-architect
 ```
 
 Claude Code, as a skills-directory plugin (no marketplace):
 
 ```bash
-git clone https://github.com/MountaZer/Skil ~/.claude/skills/prompt-architect
+git clone https://github.com/packtryer-design/Skil ~/.claude/skills/prompt-architect
 ```
 
-For one session without installing: `claude --plugin-dir /path/to/Skil`. For claude.ai: zip `skills/prompt-architect/` and upload it as a skill. Details for each path are in [INSTALL.md](INSTALL.md).
+For one session without installing: `claude --plugin-dir /path/to/Skil`. For claude.ai: zip `skills/prompt-architect/` and upload it as a skill.
+
+Any other agent needs no install step: point it at the folder and it reads [AGENTS.md](AGENTS.md) (Cursor and Copilot also pick up the entry points under `.cursor/` and `.github/`); an agent that cannot read files gets [dist/prompt-architect.portable.md](dist/prompt-architect.portable.md) as its system prompt. Details for every path are in [INSTALL.md](INSTALL.md).
 
 ## Use
 
@@ -56,6 +58,8 @@ For one session without installing: `claude --plugin-dir /path/to/Skil`. For cla
 /prompt-architect Make me a skill so my manager updates come out as executive briefs: decision first, three bullets max, then the ask.
 /prompt-architect Review this prompt: "You are a world-class engineer. Help the user with their code. Be thorough."
 /prompt-architect Is this skill safe to install? ./downloaded-skill
+/prompt-architect I run Qwen 2.5 7B in Open WebUI. Make me a skill that answers our support macros in the house voice.
+/prompt-architect Upgrade ./skills/release-notes to follow the conventions in my skill-upgrader folder.
 ```
 
 When installed as a plugin the command is namespaced (`/prompt-architect:prompt-architect`); as a skills-directory plugin or a plain skill it is `/prompt-architect`.
@@ -216,13 +220,17 @@ python skills/prompt-architect/scripts/check_upgrader.py --for domains=content a
 
 | Kind | What it is | Invocation |
 | --- | --- | --- |
-| output-style | Shapes how Claude responds for a reader or house style, persisting through the session with an off phrase | user (`/name`) |
+| output-style | Shapes how Claude responds for a reader or house style: session-scoped (on until an off phrase) or trigger-scoped (whenever a request matches) | user (`/name`), or Claude by trigger |
 | workflow | A repeatable procedure with inputs, checkpoints, tool rules, and a report | user, with arguments |
 | domain-expert | A professional deliverable produced whenever a request matches its triggers: context file, at most four questions, output template, quality checklist | Claude, by trigger phrases |
 | tool-wrapper | Drives a CLI or script safely and interprets its output with a verdict | either, narrow tools |
 | knowledge | Background reference applied silently | Claude |
 
-Package tiers: 1 a skill directory; 2 a plugin (manifests, README, INSTALL, AGENTS, CHANGELOG, evals); 3 multi-runtime adapters (Cursor mirror, Codex manifest, Gemini command, opt-in always-on hook). Every generated skill follows the Agent Skills specification and must pass `check_skill.py` with zero errors: no prompt injection or hidden text, no anti-refusal wording, no credential access or exfiltration, no unpinned or piped installs, no persistence outside the session, no destructive commands without confirmation, no trigger abuse.
+Package tiers: 1 a skill directory; 2 a plugin (manifests, README, INSTALL, AGENTS, CHANGELOG, evals); 3 multi-runtime adapters (Cursor mirror, Codex manifest, Gemini command, opt-in always-on hook). A skill for a local model keeps `SKILL.md` canonical and adds a self-contained `system.md` plus an Ollama `Modelfile`, with nothing that depends on a Claude Code host.
+
+Every generated skill follows the Agent Skills specification, declares the capabilities it needs (`capabilities-required`, `-recommended`, `-optional` in `metadata`) so a different runtime can check compatibility, and must pass `check_skill.py` with zero errors: no prompt injection or hidden text, no anti-refusal wording, no credential access or exfiltration, no unpinned or piped installs, no persistence outside the session, no destructive commands without confirmation, no trigger abuse, and a `system.md` that stands on its own.
+
+Existing skills get the same treatment in reverse: paste one for a security review with an APPROVE, CAUTION, or REJECT verdict, or ask for it to be upgraded to your conventions and the Architect applies your [skill-upgrader](#skill-upgrader) references and returns the complete updated files.
 
 ## Model tiers
 
@@ -311,9 +319,10 @@ There is deliberately no `small` or `tiny` build of the Architect itself. It is 
 | content | ad-copy, content-calendar |
 | data | data-analyst, sql-analyst, visualization-agent |
 | meta | prompt-reviewer, prompt-optimizer |
-| skill | skill-output-style, skill-workflow, skill-domain-expert, skill-tool-wrapper, skill-plugin-scaffold |
+| skill | skill-output-style, skill-workflow, skill-domain-expert, skill-tool-wrapper, skill-plugin-scaffold, skill-local-model |
+| local | small-model-task (the flat shape for `small` and `tiny` model tiers) |
 
-Templates carry frontmatter (name, version, status, category, purpose, complexity, recommended use, autonomy and risk defaults, variables, required tools, changelog, and source when adapted) and are validated and indexed by `check_templates.py`. Authoring rules are in [references/template-authoring.md](skills/prompt-architect/references/template-authoring.md).
+Thirty-six templates. Each carries frontmatter (name, version, status, category, purpose, complexity, recommended use, autonomy and risk defaults, variables, required tools, changelog, the model tiers it is written for, and source when adapted) and are validated and indexed by `check_templates.py`. Authoring rules are in [references/template-authoring.md](skills/prompt-architect/references/template-authoring.md).
 
 ## Tooling
 
@@ -337,8 +346,10 @@ python tests/run_tests.py --list                     # evaluation harness (see b
 Prompt and skill quality is judged by results, not appearance.
 
 - `tests/run_tests.py` runs the 40 cases in `tests/cases/*.toml` (simple, medium, complex, high-risk, ambiguous, underspecified, multi-domain, meta, skill, model-tier, capability, upgrader) through the skill and grades deterministically (summary values, sections, files, patterns, lint), optionally with a model judge (`--judge`) and end-to-end task execution (`--execute`). Backends: the local Claude Code CLI (default), the Anthropic API (`--backend api`), or pre-generated outputs (`--from-dir`). Reports land in `tests/results/<run>/`.
-- `evals/` holds cases in the native `claude plugin eval` layout (`prompt.md` plus `graders/criteria.md`), for when that command is available on your account.
-- `.github/workflows/validate.yml` runs the offline checks on every push.
+- Cases can carry `fixtures`, folders copied into the temporary project before the run; the `upgrader` cases use one to plant a `skill-upgrader/` folder, including a file the Architect must refuse.
+- `tests/check_docs.py` verifies that every summary line the README quotes under "How to ask" exists verbatim in a worked example, so the documentation is checked by the same suite as the fixtures.
+- `evals/` holds five cases in the native `claude plugin eval` layout (`prompt.md` plus `graders/criteria.md`), for when that command is available on your account.
+- `.github/workflows/validate.yml` runs every offline check on each push: script compilation, template validation and index, the plugin and skill-upgrader scans (including a fixture that must be rejected), the portable-build currency check, the README quote check, and the lint plus offline grading of all eight examples.
 
 ```bash
 python tests/run_tests.py --from-dir skills/prompt-architect/examples   # free, offline
@@ -348,19 +359,26 @@ python tests/run_tests.py --category skill --judge                      # live, 
 ## Repository layout
 
 ```text
-.claude-plugin/                plugin.json, marketplace.json
+AGENTS.md                      how an agent loads this project (read this first); repo map for contributors
 skills/prompt-architect/
-  SKILL.md                     the master prompt
-  references/                  stage rubrics, skill authoring, skill security, template authoring
-  templates/                   prompt templates by domain, skill templates by kind, INDEX.md
-  examples/                    worked outputs (prompts at each level, a clarification, a skill)
-  scripts/                     validate_prompt.py, check_skill.py, check_templates.py, libraries
-skill-upgrader/                your own references that adapt generated output (samples in examples/)
-dist/                          portable single-file builds (generated; do not edit)
-tests/                         evaluation harness and cases
-evals/                         native-format eval cases for the plugin itself
-references/                    third-party projects studied (ignored by git)
-AGENTS.md, INSTALL.md, CONTRIBUTING.md, THIRD_PARTY_NOTICES.md, plan.md
+  SKILL.md                     the compilation procedure, output format, and rules
+  references/                  classification, model tiers, capabilities, runtime profiles, requirements,
+                               sections, workflows, review, skill authoring, skill security, skill upgrader,
+                               template authoring
+  templates/                   36 templates: prompts by domain, skill-* scaffolds by kind, small-model-task; INDEX.md
+  examples/                    8 worked outputs: prompts at each level, a clarification, a skill,
+                               a small-tier prompt, a capability gap
+  scripts/                     pa_lib.py, pa_skill.py, validate_prompt.py, check_skill.py,
+                               check_templates.py, check_upgrader.py, build_portable.py
+skill-upgrader/                your own references that adapt generated output (README.md, inert samples in examples/)
+dist/                          portable single-file builds (generated by build_portable.py; do not edit)
+tests/                         harness (run_tests.py), 40 cases, fixtures, check_docs.py
+evals/                         five cases in the native claude plugin eval layout
+.claude-plugin/                plugin.json, marketplace.json
+.cursor/, .github/             entry points for Cursor and Copilot; the CI workflow
+references/                    planextention.md (part of the spec) and third-party projects studied (ignored by git)
+plan.md                        the specification; references/planextention.md extends it
+CLAUDE.md, CONTRIBUTING.md, INSTALL.md, THIRD_PARTY_NOTICES.md, LICENSE
 ```
 
 ## License

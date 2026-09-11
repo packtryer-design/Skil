@@ -5,10 +5,10 @@
   "description": "Compile a plain-language request into a purpose-built Claude prompt or an installable skill: classifies the task, sets risk, mode, and autonomy, extracts prioritized requirements, asks only when it matters, composes from a versioned template library, then critiques, optimizes, and validates the result.",
   "author": {
     "name": "MountaZer",
-    "url": "https://github.com/MountaZer/Skil"
+    "url": "https://github.com/packtryer-design"
   },
-  "homepage": "https://github.com/MountaZer/Skil",
-  "repository": "https://github.com/MountaZer/Skil",
+  "homepage": "https://github.com/packtryer-design/Skil",
+  "repository": "https://github.com/packtryer-design/Skil",
   "license": "MIT",
   "keywords": [
     "prompt-engineering",
