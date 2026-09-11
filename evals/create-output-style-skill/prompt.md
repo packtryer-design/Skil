@@ -1,0 +1,1 @@
+/prompt-architect:prompt-architect Make me a skill so that when I ask Claude to write an update for my manager it comes out as an executive brief: the decision or ask first, then at most three bullets of evidence, then exactly what I need from her. She skims on her phone.

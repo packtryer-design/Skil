@@ -1,0 +1,7 @@
+# Keep every text file LF in the index and the working tree, whatever the contributor's
+# core.autocrlf setting: generated files (dist/, templates/INDEX.md) are compared by
+# content, and CI runs on Linux.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.gif binary

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://www.schemastore.org/claude-code-marketplace.json",
+  "name": "prompt-architect",
+  "description": "Prompt Architect: compile requests into purpose-built Claude prompts and installable skills.",
+  "owner": {
+    "name": "MountaZer"
+  },
+  "plugins": [
+    {
+      "name": "prompt-architect",
+      "description": "Prompt and skill compiler for Claude: classification, risk, autonomy, requirements, template library, self-review, and validation.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}

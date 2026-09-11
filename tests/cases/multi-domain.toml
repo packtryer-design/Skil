@@ -1,0 +1,95 @@
+# Multi-domain requests: the Architect should combine domains rather than force one category.
+
+[[case]]
+id = "multi-software-security"
+request = "Add user avatar upload to our Django app and make sure the whole thing is secure. Repo is in the current directory."
+
+[case.expect]
+domains_all = ["software", "security"]
+risk = ["MEDIUM", "HIGH"]
+modes_all = ["ENGINEER"]
+autonomy = ["A3"]
+level = [3, 4]
+template = "repository-agent"
+clarify = false
+required_sections = ["Objective", "Requirements", "Workflow", "Safety Boundaries", "Failure Handling", "Output Format", "Completion Criteria"]
+must_match = ["(?i)django", "(?i)upload", "(?i)content[- ]type|MIME|file type|extension", "(?i)size limit|maximum size|max(imum)? file", "(?i)MUST NOT"]
+must_not_match = ["\\{\\{[A-Z_]+\\}\\}", "<!--\\s*architect"]
+max_prompt_lines = 220
+
+[case.judge]
+criteria = [
+  "The prompt names concrete upload security requirements (file type validation, size limits, safe storage location or naming, no execution of uploaded content) rather than a generic 'make it secure'.",
+  "The prompt includes a security review step of Claude's own change before completion.",
+  "The prompt requires inspecting existing Django settings, storage backend, and user model before implementing.",
+]
+
+[[case]]
+id = "multi-research-business"
+request = "Should we expand our meal-kit subscription business from the US to Canada next year? Research the market and give me a recommendation."
+
+[case.expect]
+domains_all = ["research", "business"]
+risk = ["MEDIUM", "HIGH"]
+modes_any = ["RESEARCHER", "ADVISOR", "ANALYST"]
+autonomy = ["A1"]
+level = [3]
+template_any = ["strategy-analyst", "research-agent"]
+clarify = false
+required_sections = ["Objective", "Requirements", "Output Format"]
+must_match = ["(?i)canada", "(?i)source|cite", "(?i)assumption", "(?i)estimate|unverified|not verif"]
+max_prompt_lines = 160
+
+[case.judge]
+criteria = [
+  "The prompt requires market figures to be sourced or explicitly marked as estimates, and forbids fabricating numbers.",
+  "The prompt asks for options (including not expanding) evaluated on the same criteria and a recommendation with the conditions that would change it.",
+  "The prompt states or asks Claude to state the assumptions the recommendation depends on and how sensitive the recommendation is to them.",
+]
+
+[[case]]
+id = "multi-data-visualization"
+request = "Build a small dashboard from sales.csv showing monthly revenue by region, with a chart. Python is fine."
+
+[case.expect]
+domains_all = ["data"]
+risk = ["LOW", "MEDIUM"]
+modes_any = ["ENGINEER", "ANALYST", "EXECUTOR"]
+autonomy = ["A2", "A3"]
+level = [2, 3]
+template_any = ["visualization-agent", "data-analyst"]
+clarify = false
+required_sections = ["Objective", "Requirements", "Output Format"]
+must_match = ["(?i)sales\\.csv", "(?i)month", "(?i)region", "(?i)python"]
+must_not_match = ["\\{\\{[A-Z_]+\\}\\}"]
+max_prompt_lines = 160
+
+[case.judge]
+criteria = [
+  "The prompt requires inspecting the CSV columns and data quality before charting, instead of assuming column names.",
+  "The prompt requires the plotted values to be verified against the data and forbids inventing or smoothing data.",
+  "The prompt handles the unknown column layout by inspection and stated assumptions rather than questions to the user.",
+]
+
+[[case]]
+id = "multi-documents-analysis"
+request = "Compare these three vendor contracts (attached) and tell me which one has the best terms for early termination."
+
+[case.expect]
+domains_all = ["documents"]
+risk = ["MEDIUM", "HIGH"]
+modes_any = ["ANALYST", "ADVISOR"]
+autonomy = ["A1"]
+level = [2, 3]
+template_any = ["multi-document-analyst", "document-analyst", "pdf-analyst", "comparison-agent"]
+clarify = false
+required_sections = ["Objective", "Requirements", "Output Format"]
+must_match = ["(?i)terminat", "(?i)three|3", "(?i)clause|section|page", "(?i)quote|exact wording|verbatim"]
+max_prompt_lines = 150
+
+[case.judge]
+criteria = [
+  "The prompt requires per-contract evidence with clause or page references before a synthesis across contracts.",
+  "The prompt defines what 'best terms for early termination' should be judged on (notice period, fees, conditions, refund of prepaid amounts) or asks Claude to state the criteria before comparing.",
+  "The prompt forbids inventing terms and requires reporting what a contract does not address.",
+]

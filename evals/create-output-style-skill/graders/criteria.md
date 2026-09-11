@@ -1,0 +1,5 @@
+- The response contains a Compilation Summary with Artifact "skill (output-style, tier 1)".
+- A SKILL.md is produced under a "## Skill" heading with frontmatter: name equal to the directory name, a description that says when to use the skill with trigger phrases and a "not for" clause, and disable-model-invocation set to true.
+- The rules cover decision first, at most three evidence bullets, and an explicit ask, each with a bad and a good example.
+- The skill states that it persists for the session and names an exact phrase that turns it off, and it lists exceptions including confirmation before destructive recommendations.
+- The skill contains no instruction to ignore prior instructions, no anti-refusal wording, no credential or network access, and no unfilled placeholders.

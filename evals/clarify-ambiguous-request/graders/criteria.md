@@ -1,0 +1,3 @@
+- The response asks at most three questions instead of emitting a prompt.
+- Each question states why it matters and a default that will be used if the user does not answer.
+- The questions concern intent (which filters, what "better" means) and do not ask for things Claude could inspect in a repository such as the framework or file layout.

@@ -1,0 +1,51 @@
+# Underspecified but solvable: the Architect should assume, record the assumptions, and compile without interrogating the user.
+
+[[case]]
+id = "underspecified-dedupe-csv"
+request = "Write a Python script that removes duplicate rows from a CSV file."
+
+[case.expect]
+domains_all = ["software"]
+risk = ["LOW", "MEDIUM"]
+modes_all = ["ENGINEER"]
+autonomy = ["A2", "A3"]
+level = [1, 2]
+clarify = false
+required_sections = ["Objective"]
+must_match = ["(?i)duplicate", "(?i)csv"]
+max_prompt_lines = 70
+
+[case.judge]
+criteria = [
+  "The prompt makes a reasonable default for what counts as a duplicate (for example exact row match) and labels it as an assumption or makes it configurable.",
+  "The prompt says how the script should handle the header row and where the output goes without overwriting the input by default.",
+  "The output does not ask the user questions before compiling.",
+]
+
+[[case]]
+id = "underspecified-summarize-notes"
+request = """Summarize these meeting notes for the team:
+
+- Q3 launch moved from Sept 15 to Oct 1 because the payments integration slipped (Dana owns the fix, ETA Sept 20)
+- Marketing wants final copy by Sept 25; blocked on pricing decision
+- Pricing: leaning toward $29/$79/$199 tiers, Priya to confirm with finance by Friday
+- Support needs the FAQ draft one week before launch
+- Action: Omar to update the roadmap page today"""
+
+[case.expect]
+domains_all = ["content"]
+risk = ["LOW"]
+autonomy = ["A0", "A1", "A2"]
+level = [1, 2]
+template = "none"
+clarify = false
+required_sections = ["Objective"]
+forbidden_sections = ["Workflow", "Safety Boundaries", "Failure Handling", "Tool Rules"]
+must_match = ["<(notes|meeting_notes|user_text|document|text)>", "(?i)Oct(ober)? 1"]
+max_prompt_lines = 35
+
+[case.judge]
+criteria = [
+  "The prompt embeds the notes inside XML tags and asks for a summary that preserves decisions, dates, owners, and action items.",
+  "The prompt forbids adding information not in the notes.",
+]

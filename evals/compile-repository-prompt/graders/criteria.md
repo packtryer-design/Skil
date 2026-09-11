@@ -1,0 +1,5 @@
+- The response contains a Compilation Summary with Artifact "prompt", Risk HIGH, Autonomy A3, and Level 4.
+- The compiled prompt requires inspecting the current authentication flow before any change and keeps the existing login working.
+- The compiled prompt includes a checkpoint after the plan and before implementation, a Safety Boundaries section, a Testing section, and Completion Criteria that include tests passing for both login methods.
+- The compiled prompt contains no unfilled placeholders and no persona theatrics such as "world-class".
+- No clarifying questions are asked; unknowns are handled by inspection steps and checkpoints.

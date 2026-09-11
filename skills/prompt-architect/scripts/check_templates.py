@@ -1,0 +1,197 @@
+#!/usr/bin/env python3
+"""Validate the base prompt library and maintain templates/INDEX.md.
+
+Usage:
+    python scripts/check_templates.py               # validate all templates
+    python scripts/check_templates.py --write-index # validate and regenerate INDEX.md
+    python scripts/check_templates.py --check-index # validate and fail if INDEX.md is stale
+
+Checks per template: required frontmatter keys and values, file name matches
+`name`, semantic version, declared variables match the {{VARIABLES}} used in the
+body, an Objective section exists, and the body passes the structural lint in
+template mode. Exit status 1 on any error.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+
+sys.dont_write_bytecode = True
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pa_lib  # noqa: E402
+
+TEMPLATES_DIR = pa_lib.SKILL_DIR / "templates"
+INDEX_PATH = TEMPLATES_DIR / "INDEX.md"
+REQUIRED_KEYS = [
+    "name", "version", "status", "category", "purpose", "complexity", "recommended_use",
+    "autonomy_default", "risk_default", "variables", "required_tools", "changelog",
+]
+
+
+def _as_list(value) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(v) for v in value]
+    return [str(value)]
+
+
+def validate_template(path: Path) -> tuple[dict, list[pa_lib.Finding]]:
+    findings: list[pa_lib.Finding] = []
+    err = lambda code, msg: findings.append(pa_lib.Finding("error", code, msg))  # noqa: E731
+    text = pa_lib.read_text(path)
+    meta, body = pa_lib.parse_frontmatter(text)
+    if not meta:
+        err("T00", "missing or unparseable frontmatter")
+        return meta, findings
+    yaml_error = pa_lib.frontmatter_yaml_error(text)
+    if yaml_error:
+        err("T00", f"frontmatter is not valid YAML: {yaml_error}")
+    for key in REQUIRED_KEYS:
+        if key not in meta or meta[key] in (None, "", []):
+            err("T01", f"missing frontmatter key '{key}'")
+    name = str(meta.get("name", ""))
+    if name != path.stem:
+        err("T02", f"name '{name}' does not match file name '{path.stem}'")
+    if not pa_lib.SEMVER_RE.match(str(meta.get("version", ""))):
+        err("T03", f"version '{meta.get('version')}' is not MAJOR.MINOR.PATCH")
+    if meta.get("status") not in pa_lib.TEMPLATE_STATUSES:
+        err("T04", f"status '{meta.get('status')}' not in {pa_lib.TEMPLATE_STATUSES}")
+    if meta.get("category") not in pa_lib.TEMPLATE_CATEGORIES:
+        err("T05", f"category '{meta.get('category')}' not in {pa_lib.TEMPLATE_CATEGORIES}")
+    try:
+        complexity = int(meta.get("complexity"))
+        if complexity not in pa_lib.LEVELS:
+            raise ValueError
+    except (TypeError, ValueError):
+        err("T06", f"complexity '{meta.get('complexity')}' must be 1-4")
+    if meta.get("autonomy_default") not in pa_lib.AUTONOMY:
+        err("T07", f"autonomy_default '{meta.get('autonomy_default')}' not in {pa_lib.AUTONOMY}")
+    if meta.get("risk_default") not in pa_lib.RISKS:
+        err("T08", f"risk_default '{meta.get('risk_default')}' not in {pa_lib.RISKS}")
+    declared = set(_as_list(meta.get("variables")))
+    used = set(pa_lib.VARIABLE_RE.findall(body))
+    for var in sorted(used - declared):
+        err("T09", f"variable {{{{{var}}}}} used in body but not declared")
+    for var in sorted(declared - used):
+        err("T10", f"variable {{{{{var}}}}} declared but not used in body")
+    if not _as_list(meta.get("changelog")):
+        err("T11", "changelog is empty")
+    # Optional: the model tiers this template is written for. Absent means frontier,
+    # which is the tier the whole library targets before compile-time adaptation.
+    declared_tiers = _as_list(meta.get("model_tiers")) or ["frontier"]
+    for tier in declared_tiers:
+        if tier not in pa_lib.MODEL_TIERS:
+            err("T13", f"model_tiers entry '{tier}' not in {pa_lib.MODEL_TIERS}")
+    body_tier = next((t for t in pa_lib.MODEL_TIERS if t in declared_tiers), "frontier")
+    if meta.get("category") == "skill":
+        # Skill templates carry SKILL.md skeletons in fenced blocks, not the prompt section catalog.
+        if "### " not in body or "````" not in body:
+            err("T12", "skill templates must contain at least one '### <path>' heading followed by a four-backtick fenced skeleton")
+    else:
+        findings += pa_lib.lint_prompt(
+            body,
+            autonomy=meta.get("autonomy_default"),
+            risk=meta.get("risk_default"),
+            level=int(meta["complexity"]) if str(meta.get("complexity", "")).isdigit() else None,
+            model_tier=body_tier,
+            template_mode=True,
+        )
+    # A template body legitimately mentions external content; the untrusted-content
+    # rule is checked, and W03/W04 remain warnings so authors see them.
+    return meta, findings
+
+
+def render_index(templates: list[dict]) -> str:
+    lines = [
+        "# Base Prompt Library",
+        "",
+        "Generated by `python scripts/check_templates.py --write-index`; do not edit by hand.",
+        "",
+        "Pick the template whose purpose and recommended use match the task type, read it, and",
+        "specialize it (fill slots, prune what does not apply, add task-specific rules). Use one",
+        "primary template per prompt; borrow individual sections from a second template for",
+        "multi-domain tasks. If nothing fits, compose from `references/sections.md`.",
+        "",
+        "| Template | Category | Level | Autonomy | Risk | Status | Version |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    ordered = sorted(templates, key=lambda m: (pa_lib.TEMPLATE_CATEGORIES.index(m["category"]), m["name"]))
+    for meta in ordered:
+        lines.append(
+            f"| `{meta['name']}` | {meta['category']} | {meta['complexity']} | {meta['autonomy_default']} | "
+            f"{meta['risk_default']} | {meta['status']} | {meta['version']} |"
+        )
+    current_category = None
+    for meta in ordered:
+        if meta["category"] != current_category:
+            current_category = meta["category"]
+            lines += ["", f"## {current_category}", ""]
+        lines.append(f"### {meta['name']}")
+        lines.append(f"- Purpose: {meta['purpose']}")
+        lines.append(f"- Use when: {meta['recommended_use']}")
+        lines.append(f"- Variables: {', '.join(_as_list(meta.get('variables')))}")
+        lines.append(f"- Required tools: {', '.join(_as_list(meta.get('required_tools')))}")
+        if meta.get("model_tiers"):
+            lines.append(f"- Model tiers: {', '.join(_as_list(meta.get('model_tiers')))}")
+        if meta.get("source"):
+            lines.append(f"- Adapted from: {meta['source']} ({meta.get('license', 'license not stated')})")
+        lines.append("")
+    return "\n".join(lines).rstrip("\n") + "\n"
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--write-index", action="store_true", help="regenerate templates/INDEX.md")
+    parser.add_argument("--check-index", action="store_true", help="fail if templates/INDEX.md is stale")
+    parser.add_argument("--quiet", action="store_true", help="only print problems")
+    args = parser.parse_args(argv)
+
+    paths = sorted(p for p in TEMPLATES_DIR.glob("*.md") if p.name != "INDEX.md")
+    if not paths:
+        print(f"no templates found in {TEMPLATES_DIR}", file=sys.stderr)
+        return 1
+
+    all_meta: list[dict] = []
+    error_count = 0
+    warning_count = 0
+    for path in paths:
+        meta, findings = validate_template(path)
+        errors = [f for f in findings if f.severity == "error"]
+        warnings = [f for f in findings if f.severity == "warning"]
+        error_count += len(errors)
+        warning_count += len(warnings)
+        if errors or warnings or not args.quiet:
+            status = "FAIL" if errors else "ok"
+            print(f"[{status}] {path.name}: {len(errors)} error(s), {len(warnings)} warning(s)")
+        for finding in errors + warnings:
+            print(f"    {finding}")
+        if not errors and meta:
+            all_meta.append(meta)
+
+    print(f"{len(paths)} template(s): {error_count} error(s), {warning_count} warning(s)")
+    if error_count:
+        return 1
+
+    index_text = render_index(all_meta)
+    if args.write_index:
+        INDEX_PATH.write_text(index_text, encoding="utf-8", newline="\n")
+        print(f"wrote {INDEX_PATH.relative_to(pa_lib.ROOT)}")
+    elif args.check_index:
+        current = INDEX_PATH.read_text(encoding="utf-8") if INDEX_PATH.exists() else ""
+        if current.replace("\r\n", "\n") != index_text:
+            print("templates/INDEX.md is stale; run with --write-index", file=sys.stderr)
+            return 1
+        print("templates/INDEX.md is up to date")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except AttributeError:
+        pass
+    sys.exit(main())

@@ -1,0 +1,123 @@
+# Capability awareness: the artifact must be executable in the environment it targets.
+# The failure these guard against is silent - told to run tests it cannot run, a model
+# returns a confident, fabricated report.
+
+[[case]]
+id = "gap-local-openwebui"
+request = "I want help keeping my repo healthy - find failing tests and error-handling problems and fix them. I'm running Qwen 2.5 7B locally through Open WebUI."
+
+[case.expect]
+artifact = "prompt"
+target = ["open-webui"]
+model_tier = ["small"]
+capabilities_no = ["shell"]
+gaps_blocking = ["shell"]
+compatibility = true
+autonomy = ["A0", "A1", "A2"]
+risk = ["LOW", "MEDIUM"]
+clarify = false
+must_not_match = ["(?i)\\brun the test", "(?i)\\bedit the file", "\\{\\{[A-Z_]+\\}\\}"]
+
+[case.judge]
+criteria = [
+  "The summary reports Target as open-webui and records shell and files.write as unavailable.",
+  "A Compatibility section names the blocking gaps and states the fallback that was taken.",
+  "Autonomy is A1 or A2 and the mode is not EXECUTOR, because nothing in the runtime can execute.",
+  "The prompt never instructs the model to run a command, execute code, or modify a file.",
+  "The degraded workflow is genuinely useful: the model hands over the exact command and works from output the user pastes back, rather than refusing the task.",
+]
+
+[[case]]
+id = "cap-self-target-inspect"
+request = "Write me a prompt that reviews this repository's error handling and reports what needs fixing."
+
+[case.expect]
+artifact = "prompt"
+target = ["claude-code"]
+capabilities_yes = ["files.read"]
+compatibility = false
+autonomy = ["A1"]
+clarify = false
+
+[case.judge]
+criteria = [
+  "Target is claude-code and the capabilities were taken from the environment the Architect is running in, not guessed.",
+  "No Compatibility section is emitted, because everything the task needs is available.",
+  "The prompt instructs reading and reporting only; it does not modify anything, which matches A1.",
+]
+
+[[case]]
+id = "cap-cross-target-honesty"
+request = "Write a prompt for my colleague to paste into ChatGPT. It should review contract text she pastes in and flag risky clauses."
+
+[case.expect]
+artifact = "prompt"
+capabilities_no = ["shell"]
+clarify = false
+must_not_match = ["(?i)\\brun the (test|command)", "(?i)\\binspect the repositor"]
+
+[case.judge]
+criteria = [
+  "The capability profile describes the colleague's chat environment, not the environment the Architect is running in. Filesystem and shell are not reported as available.",
+  "The prompt works from text pasted into the conversation and asks for nothing the target cannot supply.",
+  "The prompt does not tell the model to open files, run anything, or search the web unless it states those as conditional.",
+]
+
+[[case]]
+id = "cap-no-fake-execution"
+request = "We call the model from a Python service with no tools attached. Write the system prompt that reads a pasted stack trace and recommends a fix."
+
+[case.expect]
+artifact = "prompt"
+target = ["api-no-tools"]
+capabilities_no = ["shell"]
+compatibility = false
+autonomy = ["A0", "A1", "A2"]
+clarify = false
+required_sections = ["Objective", "Output Format"]
+must_not_match = ["(?i)\\brun the (test|command|script)", "(?i)\\bsearch the web"]
+
+[case.judge]
+criteria = [
+  "No instruction assumes a tool: nothing is run, fetched, opened, or written.",
+  "Because there is no human in the loop, the prompt tells the model to state its assumptions and take the safe path rather than ask a question.",
+  "The output contract is exact enough for a program to consume.",
+]
+
+[[case]]
+id = "cap-unknown-conditional"
+request = "I have my own agent harness and I honestly don't remember which tools I wired up. Write a prompt that checks a config file for problems."
+
+[case.expect]
+artifact = "prompt"
+target = ["custom-agent", "unknown"]
+clarify = false
+must_match = ["(?i)if you can|if the .{0,30}is available|otherwise"]
+
+[case.judge]
+criteria = [
+  "Capabilities that could not be determined are recorded as unknown rather than assumed either way.",
+  "Every instruction that depends on an uncertain capability is written conditionally, with a stated alternative when the capability is absent.",
+  "The Architect did not invent a capability profile for a harness it has never seen.",
+]
+
+[[case]]
+id = "cap-full-tools-regression"
+request = "Write a prompt for Claude Code that adds retry logic with exponential backoff to our HTTP client and updates the tests."
+
+[case.expect]
+artifact = "prompt"
+target = ["claude-code"]
+capabilities_yes = ["files.write"]
+compatibility = false
+gaps_blocking = []
+autonomy = ["A3"]
+level = [3, 4]
+clarify = false
+
+[case.judge]
+criteria = [
+  "Target is claude-code with execution available, so autonomy stays at A3 and nothing is degraded.",
+  "No Compatibility section is emitted and no gap is reported; the capability layer is silent when everything the task needs is present.",
+  "The prompt is not padded with capability hedging or conditional phrasing that this environment does not need.",
+]

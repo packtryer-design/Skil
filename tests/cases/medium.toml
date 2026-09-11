@@ -1,0 +1,93 @@
+# Medium requests: one domain, requirements or output structure matter, Level 2.
+
+[[case]]
+id = "medium-review-sql"
+request = """Review my SQL query for performance, it's slow on our Postgres:
+
+SELECT o.id, c.email, SUM(oi.qty * oi.price) AS total
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+JOIN order_items oi ON oi.order_id = o.id
+WHERE o.created_at > now() - interval '30 days'
+  AND c.email LIKE '%@gmail.com'
+GROUP BY o.id, c.email
+ORDER BY total DESC
+LIMIT 100;"""
+
+[case.expect]
+domains_all = ["data"]
+risk = ["LOW", "MEDIUM"]
+modes_any = ["REVIEWER", "ADVISOR", "ANALYST"]
+autonomy = ["A1", "A2"]
+level = [2]
+template = "sql-analyst"
+clarify = false
+required_sections = ["Objective", "Requirements", "Output Format"]
+forbidden_sections = ["Safety Boundaries", "Tool Rules"]
+must_match = ["<query>", "(?i)postgres", "(?i)EXPLAIN"]
+must_not_match = ["\\{\\{[A-Z_]+\\}\\}"]
+max_prompt_lines = 90
+
+[case.judge]
+criteria = [
+  "The prompt requires that any rewritten query return the same results as the original.",
+  "The prompt asks Claude to state the assumptions each recommendation depends on (indexes, data distribution, version) because these are unknown.",
+  "The prompt does not ask Claude to run or measure the query, since it has no database access in this context.",
+]
+
+[case.task]
+input = "Here is the query again for review; please proceed."
+criteria = [
+  "The response identifies the leading-wildcard LIKE on email as a construct that prevents index use.",
+  "The response recommends an index involving orders.created_at or explains how the date predicate could use an index.",
+  "The response does not claim to have executed the query or measured its performance.",
+  "The response preserves the result semantics (does not silently change the LIMIT, ordering, or grouping).",
+]
+
+[[case]]
+id = "medium-analyze-document"
+request = "Analyze this contract (attached PDF) and tell me the termination terms and whether there are any auto-renewal clauses I should worry about."
+
+[case.expect]
+domains_all = ["documents"]
+risk = ["MEDIUM", "HIGH"]
+modes_any = ["ANALYST", "ADVISOR"]
+autonomy = ["A0", "A1"]
+level = [2]
+template_any = ["pdf-analyst", "document-analyst"]
+artifact = "prompt"
+clarify = false
+required_sections = ["Objective", "Requirements", "Output Format"]
+must_match = ["(?i)terminat", "(?i)auto[- ]?renew", "(?i)page|section|clause"]
+max_prompt_lines = 90
+
+[case.judge]
+criteria = [
+  "The prompt requires page or clause references for every extracted term.",
+  "The prompt forbids inventing terms that are not in the contract and asks Claude to say what the contract does not cover.",
+  "The prompt asks Claude to quote exact wording for obligations, dates, notice periods, or amounts.",
+]
+
+[[case]]
+id = "medium-plan-dashboard"
+request = "Plan an analytics dashboard for our support team: ticket volume, first response time, resolution time, and CSAT. We use Postgres and React. Just the plan for now."
+
+[case.expect]
+domains_any = ["software", "data", "business"]
+risk = ["LOW", "MEDIUM"]
+modes_any = ["ARCHITECT", "ADVISOR", "ANALYST"]
+autonomy = ["A2"]
+level = [2, 3]
+clarify = false
+required_sections = ["Objective", "Output Format"]
+forbidden_sections = ["Testing"]
+must_match = ["(?i)CSAT", "(?i)postgres", "(?i)react"]
+must_not_match = ["(?i)implement the", "(?i)write the code"]
+max_prompt_lines = 120
+
+[case.judge]
+criteria = [
+  "The prompt makes clear that Claude should produce a plan only and not implement anything.",
+  "The prompt names the four metrics and asks for how each is defined and computed from the data.",
+  "The prompt does not interrogate the user; unknowns (data model, refresh frequency, audience) are handled as stated assumptions or as questions Claude lists in its output.",
+]

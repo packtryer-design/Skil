@@ -1,0 +1,6 @@
+- The Compilation Summary reports Target as open-webui and records shell and files.write as unavailable, rather than assuming the capabilities of the environment the Architect is running in.
+- Autonomy is no higher than A2 and the mode is not EXECUTOR, because nothing in that runtime can execute.
+- A Compatibility section names the blocking gaps, states what would restore them, and states the fallback that was taken.
+- The compiled prompt never instructs the model to run a command, execute code, modify a file, or search the web.
+- The degraded workflow is still useful: the model hands over the exact command and works from output the user pastes back, rather than refusing the task.
+- No clarifying questions are asked; the unknowns are recorded as assumptions instead.

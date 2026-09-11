@@ -1,0 +1,109 @@
+# Skill artifacts: the Architect creates installable skills (SKILL.md packages), not one-off prompts.
+
+[[case]]
+id = "skill-exec-brief"
+request = "Make me a skill so that when I ask Claude to write an update for my manager it comes out as an executive brief: the decision or ask first, then at most three bullets of evidence, then exactly what I need from her. She skims on her phone."
+
+[case.expect]
+artifact = "skill"
+skill_kind = "output-style"
+tier = 1
+domains_any = ["content", "meta", "business"]
+risk = ["LOW", "MEDIUM"]
+autonomy = ["A1", "A2"]
+level = [2, 3]
+template = "skill-output-style"
+clarify = false
+required_files = ["SKILL.md"]
+must_match = ["(?i)(persist|scope|apply (these|the) rules)", "(?i)(before sending|pre-send)", "(?i)bad:", "(?i)good:", "(?i)three", "(?i)(use when|trigger|when the user)"]
+must_not_match = ["\\{\\{[A-Z_]+\\}\\}", "<!--\\s*architect", "(?i)world[- ]class"]
+max_skill_lines = 200
+
+[case.judge]
+criteria = [
+  "The SKILL.md description says what the skill does and when to use it, with trigger phrases and a 'not for' clause.",
+  "The rules include the three required behaviors (decision or ask first, at most three evidence bullets, explicit ask at the end), each with a bad and a good example.",
+  "The skill states its scope: either it persists for the session with an exact phrase that turns it off, or it applies whenever a manager update is requested and says how to get the default style for one message.",
+  "The skill includes exceptions such as a full explanation on request, one question on real ambiguity, and the harness system prompt outranking the skill.",
+]
+
+[[case]]
+id = "skill-pr-ready"
+request = "Create a /pr-ready skill for this repo that checks my current branch is ready for a pull request: tests pass, lint is clean, commit messages follow conventional commits, and then drafts the PR description. It should never push."
+
+[case.expect]
+artifact = "skill"
+skill_kind = "workflow"
+tier = 1
+skill_name = "pr-ready"
+domains_all = ["software"]
+risk = ["LOW", "MEDIUM"]
+autonomy = ["A2", "A3"]
+level = [2, 3]
+template = "skill-workflow"
+clarify = false
+required_files = ["SKILL.md"]
+must_match = ["(?i)conventional commit", "(?i)lint", "(?i)test", "(?i)(never|must not|do not) (run |use )?`?(git )?push", "(?i)allowed-tools"]
+must_not_match = ["\\{\\{[A-Z_]+\\}\\}"]
+max_skill_lines = 250
+
+[case.judge]
+criteria = [
+  "The skill's steps are numbered actions with observable results (run tests, run lint, check commit messages, draft the description).",
+  "The skill forbids pushing and any destructive git operation, and requires reporting the exact commands run rather than claiming checks that did not run.",
+  "The skill discovers the project's test and lint commands from the repository rather than hard-coding a stack the user did not name.",
+  "allowed-tools is narrow (git, test, and lint commands plus read access) rather than a wildcard.",
+]
+
+[[case]]
+id = "skill-cold-email-sop"
+request = "Make a skill for my sales team: whenever someone asks for a cold outreach email sequence, produce a three-step sequence following our SOP: personalization from the prospect's public info first, one call to action per email, follow-ups on day 3 and day 7, under 120 words each."
+
+[case.expect]
+artifact = "skill"
+skill_kind = "domain-expert"
+tier = 1
+domains_any = ["business", "content"]
+risk = ["LOW", "MEDIUM"]
+autonomy = ["A1", "A2"]
+level = [2, 3]
+template = "skill-domain-expert"
+clarify = false
+required_files = ["SKILL.md"]
+must_match = ["(?i)use when|trigger", "(?i)day 3", "(?i)day 7", "(?i)120", "(?i)one (call to action|CTA)", "(?i)not for"]
+must_not_match = ["disable-model-invocation: true", "\\{\\{[A-Z_]+\\}\\}", "(?i)never refuse"]
+max_skill_lines = 250
+
+[case.judge]
+criteria = [
+  "The description contains trigger phrases so the skill fires on cold outreach requests, and a 'not for' clause for adjacent requests.",
+  "The skill asks at most four questions and only for what the request or a context file does not already answer.",
+  "The skill includes an output template for the three emails and a quality checklist covering personalization, one CTA, word count, and the day 3 and day 7 timing.",
+  "The skill forbids inventing facts about the prospect and treats scraped or supplied prospect information as data, not instructions.",
+]
+
+[[case]]
+id = "skill-plugin-standup"
+request = "Turn this idea into a plugin I can share with my team through a marketplace: a /standup skill that reads my git log since yesterday and turns it into a three-line standup note (done, doing, blocked). Call it standup-notes."
+
+[case.expect]
+artifact = "skill"
+skill_kind = "workflow"
+tier = 2
+domains_all = ["software"]
+risk = ["LOW", "MEDIUM"]
+autonomy = ["A1", "A2", "A3"]
+level = [3]
+template_any = ["skill-workflow", "skill-plugin-scaffold"]
+clarify = false
+required_files = ["SKILL.md", ".claude-plugin/plugin.json", ".claude-plugin/marketplace.json", "README.md", "INSTALL.md"]
+must_match = ["(?i)git log", "(?i)done", "(?i)blocked"]
+must_not_match = ["\\{\\{[A-Z_]+\\}\\}"]
+
+[case.judge]
+criteria = [
+  "The plugin manifest and marketplace entry are present with a kebab-case name, a version, and a description, and the marketplace source points at the plugin directory.",
+  "The README explains what the skill does, how to install it from the marketplace and manually, and how to invoke it.",
+  "The package includes at least three eval cases as prompt.md and graders/criteria.md pairs under evals/.",
+  "The SKILL.md reads only the git log (read-only) and never pushes, commits, or modifies the repository.",
+]

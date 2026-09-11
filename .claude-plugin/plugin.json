@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "prompt-architect",
+  "version": "1.2.0",
+  "description": "Compile a plain-language request into a purpose-built Claude prompt or an installable skill: classifies the task, sets risk, mode, and autonomy, extracts prioritized requirements, asks only when it matters, composes from a versioned template library, then critiques, optimizes, and validates the result.",
+  "author": {
+    "name": "MountaZer",
+    "url": "https://github.com/MountaZer/Skil"
+  },
+  "homepage": "https://github.com/MountaZer/Skil",
+  "repository": "https://github.com/MountaZer/Skil",
+  "license": "MIT",
+  "keywords": [
+    "prompt-engineering",
+    "skills",
+    "skill-creator",
+    "prompt-compiler",
+    "claude-code"
+  ]
+}

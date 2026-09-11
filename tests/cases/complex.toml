@@ -1,0 +1,75 @@
+# Complex requests: multi-step or tool-using work, Level 3.
+
+[[case]]
+id = "complex-modify-repo"
+request = "Add rate limiting to the public REST API in my Express app. We already have Redis in the stack. The repo is in the current directory."
+
+[case.expect]
+domains_all = ["software"]
+risk = ["MEDIUM", "HIGH"]
+modes_all = ["ENGINEER"]
+autonomy = ["A3"]
+level = [3, 4]
+template = "repository-agent"
+clarify = false
+required_sections = ["Objective", "Requirements", "Resources", "Autonomy", "Workflow", "Safety Boundaries", "Failure Handling", "Output Format", "Completion Criteria"]
+must_match = ["(?i)rate limit", "(?i)redis", "(?i)inspect", "(?i)test", "(?i)MUST NOT"]
+must_not_match = ["\\{\\{[A-Z_]+\\}\\}", "<!--\\s*architect"]
+max_prompt_lines = 200
+
+[case.judge]
+criteria = [
+  "The prompt instructs Claude to inspect the repository (routes, middleware, existing Redis usage) before changing anything.",
+  "The prompt requires the existing tests to be run and new tests for the rate limiting behavior to be added.",
+  "The prompt bounds the change to the rate-limiting feature and forbids unrelated refactors.",
+  "The prompt includes a rule that Claude must not report tests it did not run.",
+  "Unknowns such as the limits per client or how clients are identified are handled by inspection plus a checkpoint or stated default, not by asking the user up front.",
+]
+
+[[case]]
+id = "complex-production-architecture"
+request = "Design a production architecture on AWS for a multi-tenant B2B SaaS that needs to handle around 10k requests per second at peak with strict tenant data isolation. We're a team of six engineers."
+
+[case.expect]
+domains_all = ["software"]
+risk = ["MEDIUM", "HIGH"]
+modes_all = ["ARCHITECT"]
+autonomy = ["A2"]
+level = [3]
+template = "architecture-agent"
+clarify = false
+required_sections = ["Objective", "Requirements", "Constraints", "Output Format", "Completion Criteria"]
+must_match = ["(?i)tenant", "(?i)isolation", "(?i)10k|10,000|10 000", "(?i)alternative|option", "(?i)trade-?off"]
+must_not_match = ["\\{\\{[A-Z_]+\\}\\}"]
+max_prompt_lines = 160
+
+[case.judge]
+criteria = [
+  "The prompt asks for alternatives with trade-offs and a single recommendation, not a single design presented as the only option.",
+  "The prompt treats the team size as a constraint on operational complexity.",
+  "The prompt asks for implementation phases and risks, and for open questions rather than silent assumptions.",
+]
+
+[[case]]
+id = "complex-research-purchase"
+request = "Research which laptop I should buy for local ML development. Budget around $2,500. I travel a lot."
+
+[case.expect]
+domains_all = ["research"]
+risk = ["MEDIUM"]
+modes_any = ["RESEARCHER", "ADVISOR"]
+autonomy = ["A1"]
+level = [2, 3]
+template_any = ["comparison-agent", "research-agent"]
+clarify = false
+required_sections = ["Objective", "Requirements", "Output Format"]
+must_match = ["(?i)2,?500", "(?i)travel|weight|portab", "(?i)source|cite", "(?i)unverified|could not verify|not verif"]
+max_prompt_lines = 150
+
+[case.judge]
+criteria = [
+  "The prompt derives decision criteria from the use case (GPU or unified memory, sustained performance, weight, battery) rather than leaving them implicit.",
+  "The prompt asks for exactly one recommendation plus the conditions under which another option wins.",
+  "The prompt handles the unknown operating-system preference by covering options across platforms rather than asking the user.",
+  "The prompt requires dated sources for prices and specifications.",
+]

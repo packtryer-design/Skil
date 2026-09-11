@@ -1,0 +1,31 @@
+# Ambiguous requests: the clarification gate should ask (few, specific questions with defaults) and not emit a prompt.
+
+[[case]]
+id = "ambiguous-dashboard"
+request = "Make the dashboard way better and add filters."
+
+[case.expect]
+domains_any = ["software", "data"]
+clarify = true
+
+[case.judge]
+criteria = [
+  "The output asks at most three questions.",
+  "Each question states why it matters and a default that will be used if the user does not answer.",
+  "The questions cover what the filters should be and what 'better' means; they do not ask for things Claude could inspect in a repository (framework, file layout).",
+  "No compiled prompt is emitted before the questions are answered.",
+]
+
+[[case]]
+id = "ambiguous-migrate-platform"
+request = "Migrate our app to the new platform."
+
+[case.expect]
+clarify = true
+
+[case.judge]
+criteria = [
+  "The output asks which platform is the target and which application is meant, or otherwise resolves the identity of both, before compiling.",
+  "The output asks at most three questions, each with a stated consequence and a default.",
+  "No compiled prompt is emitted.",
+]

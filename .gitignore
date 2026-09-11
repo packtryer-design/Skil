@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/results/
+prompts/
+.DS_Store
+Thumbs.db
+
+# Third-party reference repositories (see references/README.md); re-download from upstream.
+references/i-have-adhd-main/
+references/ai-business-skills-master/
+references/SkillSpector-main/
+
+# Capability profiles the Architect saves in a working project.
+.prompt-architect/

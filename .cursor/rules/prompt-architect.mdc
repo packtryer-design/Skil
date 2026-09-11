@@ -1,0 +1,13 @@
+---
+description: Load the Prompt Architect when the user asks for a prompt or a skill to be written, improved, or reviewed.
+alwaysApply: false
+---
+
+This project is the Prompt Architect: a compiler that turns a plain-language request into a
+purpose-built prompt or an installable skill.
+
+Do not improvise one. Read `skills/prompt-architect/SKILL.md` in full and follow its stages,
+opening a file under `skills/prompt-architect/references/` only when the stage that needs it
+runs. Return the output in the format `SKILL.md` specifies.
+
+`AGENTS.md` has the full loading instructions, including what to do if you cannot read files.

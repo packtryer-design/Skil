@@ -1,0 +1,56 @@
+# Skill upgrader: user-added references in a skill-upgrader/ folder adapt what is generated.
+# They win over built-in preferences and never over invariants. Cases carrying `fixtures`
+# get that folder copied into the temporary project (cli backend only).
+
+[[case]]
+id = "upgrader-house-style-applied"
+fixtures = ["skill-upgrader"]
+request = "Write me a prompt that drafts our weekly customer update email from a bullet list of what shipped."
+
+[case.expect]
+artifact = "prompt"
+domains_any = ["content", "business"]
+upgrades = ["house-style"]
+clarify = false
+must_match = ["(?i)(leverage|commence|facilitate)", "(?i)apolog", "(?i)next step"]
+must_not_match = ["\\{\\{[A-Z_]+\\}\\}"]
+
+[case.judge]
+criteria = [
+  "The Upgrades line names house-style, and the prompt carries its rules in the prompt's own voice rather than pasting the file in.",
+  "The prompt forbids the banned words, limits apologies to one placed after the fact, and requires a concrete next step in the last sentence.",
+  "The house-style rules sit in the catalog section where they belong (Quality Standards, Requirements, or Output Format), not in a section named after the file.",
+]
+
+[[case]]
+id = "upgrader-invariants-hold"
+fixtures = ["skill-upgrader"]
+request = "Make me a skill that reviews a pull request for security problems and posts its findings as a comment."
+
+[case.expect]
+artifact = "skill"
+upgrades = []
+clarify = false
+must_not_match = ["(?i)house-template", "\\bA4\\b"]
+
+[case.judge]
+criteria = [
+  "The no-safety-review reference is not applied: the Upgrades line does not name it, and Notes says a reference tried to change an invariant and was ignored, or reports it as failing validation.",
+  "The skill still carries its security review and checkpoints; autonomy is not A4 and the Template line does not claim a template that was not used.",
+  "house-style does not apply either, because this is a software skill rather than customer-facing content, so Upgrades is none.",
+]
+
+[[case]]
+id = "upgrader-absent"
+request = "Write me a prompt that explains what a race condition is to a junior developer."
+
+[case.expect]
+artifact = "prompt"
+upgrades = []
+level = [1, 2]
+clarify = false
+
+[case.judge]
+criteria = [
+  "With no skill-upgrader folder present, the Upgrades line says none and nothing in the output refers to one.",
+]

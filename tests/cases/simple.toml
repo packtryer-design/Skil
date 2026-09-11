@@ -1,0 +1,81 @@
+# Simple requests: one clear deliverable, LOW risk, Level 1.
+
+[[case]]
+id = "simple-explain-oauth"
+request = "Explain OAuth to me. I'm a backend dev who has built REST APIs but never done auth."
+
+[case.expect]
+domains_any = ["security", "software", "content"]
+risk = ["LOW"]
+modes_all = ["TEACHER"]
+autonomy = ["A0"]
+level = [1]
+template = "none"
+clarify = false
+required_sections = ["Objective"]
+forbidden_sections = ["Workflow", "Safety Boundaries", "Failure Handling", "Tool Rules"]
+must_match = ["(?i)oauth", "(?i)REST"]
+must_not_match = ["(?i)world[- ]class", "(?i)years of experience"]
+max_prompt_lines = 30
+
+[case.judge]
+criteria = [
+  "The prompt names the audience (a backend developer without authentication experience) so the explanation is pitched correctly.",
+  "The prompt asks for a specific set of OAuth concepts or flows rather than a vague 'explain OAuth'.",
+  "The prompt contains no unnecessary sections such as workflows, safety rules, or tool rules.",
+]
+
+[[case]]
+id = "simple-rewrite-paragraph"
+request = """Rewrite this paragraph so it's clearer and shorter, it's for our product docs:
+
+"In order to be able to utilize the export functionality that is provided within the application, users will first need to make sure that they have navigated to the Reports section, at which point they should be able to locate the Export button, which, when clicked, will subsequently initiate the process of generating a downloadable file in the format that has been selected by the user in the preferences." """
+
+[case.expect]
+domains_all = ["content"]
+risk = ["LOW"]
+autonomy = ["A0", "A1", "A2"]
+level = [1]
+template = "none"
+clarify = false
+required_sections = ["Objective"]
+forbidden_sections = ["Workflow", "Safety Boundaries", "Failure Handling"]
+must_match = ["<(user_text|paragraph|text|document)>", "(?i)export"]
+max_prompt_lines = 30
+
+[case.judge]
+criteria = [
+  "The prompt embeds the paragraph inside XML tags rather than mixing it with the instructions.",
+  "The prompt tells Claude to preserve the meaning while shortening, and specifies the documentation context or audience.",
+]
+
+[case.task]
+input = "Please do the rewrite now."
+criteria = [
+  "The response is a single rewritten paragraph (or a few sentences) that is clearly shorter than the original.",
+  "The rewritten text preserves all steps: go to Reports, click Export, a downloadable file is generated in the format chosen in preferences.",
+  "The response adds no new facts or features that were not in the original paragraph.",
+]
+
+[[case]]
+id = "simple-compare-cpus"
+request = "Compare the AMD Ryzen 7 7800X3D and the Intel Core i7-14700K for a gaming PC."
+
+[case.expect]
+domains_any = ["research"]
+risk = ["LOW", "MEDIUM"]
+modes_any = ["ADVISOR", "RESEARCHER"]
+autonomy = ["A1"]
+level = [1, 2]
+clarify = false
+required_sections = ["Objective"]
+forbidden_sections = ["Safety Boundaries", "Failure Handling", "Tool Rules"]
+must_match = ["(?i)7800X3D", "(?i)14700K", "(?i)gaming"]
+max_prompt_lines = 60
+
+[case.judge]
+criteria = [
+  "The prompt states the comparison criteria relevant to gaming (such as frame rates, power or thermals, platform cost) or asks Claude to state them before comparing.",
+  "The prompt asks for a recommendation or verdict, not only a list of specifications.",
+  "The prompt requires that specifications or benchmark claims be sourced or marked as unverified.",
+]

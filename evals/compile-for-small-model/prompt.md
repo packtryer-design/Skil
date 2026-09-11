@@ -1,0 +1,1 @@
+/prompt-architect:prompt-architect I run Llama 3.2 3B locally with Ollama. I want it to sort our incoming support emails into our five queues (billing, technical, sales, spam, other) so the on-call engineer only sees theirs. Group them by queue and put the most confident ones first.

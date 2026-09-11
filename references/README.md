@@ -1,0 +1,13 @@
+# External reference material
+
+Third-party projects studied while building the Prompt Architect. They are kept here for reference and are not part of the skill or the plugin; nothing in `skills/`, `scripts/`, or `tests/` imports from them at run time. The directories are ignored by git (see `.gitignore`); re-download them from the upstream repositories if needed.
+
+| Directory | Upstream | License | What was used |
+| --- | --- | --- | --- |
+| `i-have-adhd-main/` | https://github.com/ayghri/i-have-adhd | MIT | The model for how a single skill is packaged and shipped: `skills/<name>/SKILL.md` with plugin manifests (`.claude-plugin/`), `AGENTS.md` as the repository map, per-runtime install docs, opt-in always-on hooks, paired evals with a blind rubric, and contribution rules. The skill's own structure (persistence clause, rules with bad/good pairs, "when to break the rules", pre-send check) is the pattern behind the `skill-output-style` template. |
+| `ai-business-skills-master/` | https://github.com/minhnv0807/ai-business-skills | MIT | Source for the marketing and business templates (`marketing-plan`, `campaign-brief`, `ad-copy`, `competitor-research`, `customer-insight`, `content-calendar`), condensed and restructured to the Architect's section catalog with attribution in each template's frontmatter. Also the pattern behind the `skill-domain-expert` template: a context file read once per project, an information-gathering step capped at four questions, a tabled output template, a quality checklist, and cross-references between skills. |
+| `SkillSpector-main/` | https://github.com/NVIDIA/SkillSpector | Apache-2.0 | The vulnerability categories and rule explanations (prompt injection, data exfiltration, privilege escalation, supply chain, excessive agency, system prompt leakage, memory poisoning, tool misuse, rogue agent, trigger abuse, agent snooping, anti-refusal) behind `references/skill-security.md` and the static checks in `skills/prompt-architect/scripts/check_skill.py`. When the `skillspector` CLI is installed, `check_skill.py --skillspector` runs it as a second opinion. Its bundled `skill-inspector` skill is the pattern behind the `skill-tool-wrapper` template. |
+
+See `THIRD_PARTY_NOTICES.md` at the repository root for the license texts that apply to adapted material.
+
+`planextention.md` in this directory is not third-party material: it is the owner's extension of `plan.md`, specifying capability awareness (target and runtime identification, capability discovery, gap analysis, the no-fake-capability rule). It is committed, and it is part of the specification the skill implements.

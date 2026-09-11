@@ -1,0 +1,34 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  offline-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile scripts
+        run: python -X pycache_prefix=/tmp/pa-pyc -m py_compile skills/prompt-architect/scripts/*.py tests/*.py
+      - name: Validate templates and index
+        run: python skills/prompt-architect/scripts/check_templates.py --check-index
+      - name: Scan the plugin and its skill
+        run: python skills/prompt-architect/scripts/check_skill.py --plugin .
+      - name: Validate the shipped skill-upgrader samples and the test fixture
+        run: |
+          python skills/prompt-architect/scripts/check_upgrader.py --dir skill-upgrader
+          python skills/prompt-architect/scripts/check_upgrader.py --dir tests/fixtures/skill-upgrader && exit 1 || echo "fixture rejected as intended"
+      - name: Check the portable builds are current
+        run: python skills/prompt-architect/scripts/build_portable.py --check
+      - name: Check README quotes match the examples
+        run: python tests/check_docs.py
+      - name: Lint worked examples
+        run: |
+          set -e
+          for f in skills/prompt-architect/examples/*.md; do python skills/prompt-architect/scripts/validate_prompt.py "$f"; done
+      - name: Grade worked examples offline
+        run: python tests/run_tests.py --from-dir skills/prompt-architect/examples --case simple-explain-oauth --case medium-review-sql --case complex-research-purchase --case high-risk-cognito-oidc --case ambiguous-dashboard --case skill-exec-brief --case tier-small-classify --case gap-local-openwebui --out /tmp/pa-results

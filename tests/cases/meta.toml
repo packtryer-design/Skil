@@ -1,0 +1,27 @@
+# Meta requests: reviewing or optimizing an existing prompt.
+
+[[case]]
+id = "meta-review-prompt"
+request = """Review this prompt I use for code help and make it better:
+
+"You are a world-class senior engineer with 20 years of experience. Help the user with their code. Be thorough. Always test everything. Don't make mistakes. If something is unclear ask. Never ask unnecessary questions." """
+
+[case.expect]
+domains_all = ["meta"]
+risk = ["LOW", "MEDIUM"]
+modes_any = ["REVIEWER", "ADVISOR"]
+level = [2, 3]
+template_any = ["prompt-reviewer", "prompt-optimizer"]
+clarify = false
+review = true
+required_sections = ["Objective"]
+must_not_match = ["(?i)world[- ]class", "(?i)20 years", "(?i)don't make mistakes"]
+max_prompt_lines = 80
+
+[case.judge]
+criteria = [
+  "The output contains a review with a score, ranked issues, and recommendations before the optimized prompt.",
+  "The review identifies the contradiction between 'if something is unclear ask' and 'never ask unnecessary questions' and resolves it with a concrete rule.",
+  "The optimized prompt removes the persona credentials and replaces vague instructions ('be thorough', 'always test everything') with testable rules such as running tests before reporting and not claiming tests that were not run.",
+  "The optimized prompt preserves the original intent: helping the user with their code.",
+]

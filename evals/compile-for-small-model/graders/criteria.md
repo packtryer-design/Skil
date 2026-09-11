@@ -1,0 +1,6 @@
+- The Compilation Summary reports Model as "small", justified by the 3B model or the Ollama runtime, and Autonomy no higher than A2.
+- The compiled prompt contains an Examples section with at least one complete worked example: an input email and the exact output for it.
+- The output contract is a literal template to copy, with fixed keys and a closed set of allowed values, and the prompt says to output nothing else.
+- Instructions are short imperative sentences using MUST and MUST NOT only, with no SHOULD or MAY and no conditional wording such as "unless" or "as appropriate".
+- The prompt asks the model to do one job. The grouping and ordering are declined or moved to Notes as work for the calling code, not added as a second task.
+- The compiled prompt is not longer than a frontier-tier prompt for the same task would be; the added detail is in the examples and the output template, not in extra rules.

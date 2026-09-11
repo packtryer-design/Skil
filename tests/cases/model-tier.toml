@@ -1,0 +1,113 @@
+# Model tier: the artifact is written for the capability of the model that will execute it.
+# A weaker model gets fewer rules, sections, and tools plus worked examples, not a longer prompt.
+
+[[case]]
+id = "tier-small-classify"
+request = "I run Llama 3.2 3B locally with Ollama. I want it to sort our incoming support emails into our five queues (billing, technical, sales, spam, other) so the on-call engineer only sees theirs. Group them by queue and put the most confident ones first."
+
+[case.expect]
+artifact = "prompt"
+model_tier = ["small"]
+domains_any = ["business", "data", "content"]
+risk = ["LOW", "MEDIUM"]
+autonomy = ["A0", "A1", "A2"]
+clarify = false
+required_sections = ["Objective", "Output Format", "Examples"]
+must_match = ["(?i)(output nothing else|nothing but|only these|exactly these)", "(?i)billing"]
+must_not_match = ["\\bSHOULD\\b", "\\bMAY\\b", "(?i)\\bas appropriate\\b", "(?i)\\bwhere relevant\\b", "\\{\\{[A-Z_]+\\}\\}"]
+max_prompt_lines = 80
+
+[case.judge]
+criteria = [
+  "The Compilation Summary reports Model as small, justified by the named 3B model or the Ollama runtime.",
+  "The prompt contains at least one complete worked example: an input email and the exact output produced for it.",
+  "The output contract is a literal template to copy, with fixed keys and a closed list of allowed values, and the prompt says to output nothing else.",
+  "Instructions are short imperative sentences with no conditional clauses that ask the model to use its judgment.",
+  "The prompt asks for one job only. If grouping, summarizing, or replying were also implied, they are declined or deferred to Notes rather than added as a second task.",
+]
+
+[[case]]
+id = "tier-tiny-extract"
+request = "I have Qwen 2.5 0.5B running on a Raspberry Pi with no GPU. It needs to pull the total amount out of OCR'd invoice text and nothing else."
+
+[case.expect]
+artifact = "prompt"
+model_tier = ["tiny"]
+risk = ["LOW", "MEDIUM"]
+autonomy = ["A0", "A1"]
+clarify = false
+required_sections = ["Objective", "Examples"]
+must_not_match = ["\\bSHOULD\\b", "\\bMAY\\b", "\\{\\{[A-Z_]+\\}\\}"]
+max_prompt_lines = 35
+
+[case.judge]
+criteria = [
+  "The Compilation Summary reports Model as tiny, justified by the sub-3B model, the quantized or single-board hardware, or both.",
+  "The prompt contains two or three complete worked examples: OCR text in, the extracted total out.",
+  "The output is one line or one small flat object with fixed keys. There is no prose, no explanation, and no nested structure.",
+  "The whole prompt is short, has no more than three sections, and asks for exactly one thing.",
+]
+
+[[case]]
+id = "tier-mid-haiku"
+request = "We are building a support ticket triage service on the Claude API and using Haiku to keep the cost down. Write the system prompt: classify the ticket, set a priority, and draft a one-line internal summary."
+
+[case.expect]
+artifact = "prompt"
+model_tier = ["mid"]
+risk = ["LOW", "MEDIUM"]
+autonomy = ["A1", "A2"]
+level = [2, 3]
+clarify = false
+required_sections = ["Objective", "Output Format"]
+max_prompt_lines = 90
+
+[case.judge]
+criteria = [
+  "The Compilation Summary reports Model as mid, justified by Haiku or the cost cue.",
+  "The output contract is a literal structure a program can parse, not a prose description of what to include.",
+  "Instructions are one per sentence and no section runs long; the prompt is noticeably tighter than one written for a frontier model.",
+  "Because the host is an API with no human in the loop, the prompt tells the model to state assumptions and take the safe path rather than ask.",
+]
+
+[[case]]
+id = "tier-skill-local"
+request = "Make me a skill for my local Qwen 2.5 3B in Ollama so it always answers our support macros in the house voice: short, no apologies, one concrete next step at the end."
+
+[case.expect]
+artifact = "skill"
+model_tier = ["small"]
+risk = ["LOW", "MEDIUM"]
+autonomy = ["A1", "A2"]
+clarify = false
+required_files = ["SKILL.md", "system.md", "Modelfile"]
+must_not_match = ["\\{\\{[A-Z_]+\\}\\}", "<!--\\s*architect"]
+
+[case.judge]
+criteria = [
+  "The package keeps SKILL.md as the canonical file and derives the rest from it.",
+  "The Modelfile names a base model, sets num_ctx and temperature, and carries the rules inside a SYSTEM block.",
+  "system.md is self-contained: no ${CLAUDE_SKILL_DIR}, no pointers to a references directory, no $ARGUMENTS, and no rule that depends on allowed-tools being enforced.",
+  "The rules are short imperative sentences with worked examples, sized for a 3B model rather than copied from a frontier-tier skill.",
+]
+
+[[case]]
+id = "tier-frontier-regression"
+request = "Write a prompt that reviews a Python module for error handling problems and reports each issue with the file and line."
+
+[case.expect]
+artifact = "prompt"
+model_tier = ["frontier"]
+domains_all = ["software"]
+risk = ["LOW", "MEDIUM"]
+autonomy = ["A1"]
+clarify = false
+required_sections = ["Objective"]
+max_prompt_lines = 90
+
+[case.judge]
+criteria = [
+  "The Compilation Summary reports Model as frontier, since the request names no model, runtime, or cost constraint.",
+  "The prompt is not padded with worked examples, a fill-in output template, or MUST-only phrasing that this task does not need; it reads like a prompt for a capable model.",
+  "The prompt asks for findings with file and line, which is a reasonable request at this tier.",
+]
